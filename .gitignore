@@ -20,6 +20,8 @@ npm-debug.log*
 # Test artefacts
 *.webm
 final_neutral_ui.png
+# Demo media for the README is checked in on purpose
+!docs/demo.webm
 
 # Model weights (327 MB — over GitHub's 100 MB limit)
 # Download from the GitHub Release and place at src/model/safeview_model.onnx
