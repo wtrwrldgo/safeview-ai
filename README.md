@@ -4,6 +4,12 @@ A Chrome extension that runs a local vision model on every frame of the video yo
 
 Works on YouTube and Netflix. Built on ONNX Runtime Web.
 
+<p align="center">
+  <img src="docs/popup.png" alt="SafeView popup" width="320" />
+</p>
+
+https://github.com/wtrwrldgo/safeview-ai/raw/main/docs/demo.webm
+
 ## What it does
 
 SafeView watches the video you are actually playing, in real time, with a small ONNX model running inside Chrome. When the model flags the current frame as NSFW, gore, or horror, SafeView reacts with one of two actions that you pick from the popup:
@@ -75,6 +81,11 @@ Everything is in the popup. There are no hidden flags.
 | NSFW and Nudity    | On      | Flag frames above the NSFW score threshold           |
 | Violence and Gore  | On      | Flag frames above the gore or horror score threshold |
 | Action mode        | Blur    | What to do with a flagged frame (blur or skip)       |
+| NSFW threshold     | 0.50    | Minimum NSFW score that counts as a hit (0.30–0.90)  |
+| Gore threshold     | 0.50    | Minimum gore score that counts as a hit (0.30–0.90)  |
+| Horror threshold   | 0.50    | Minimum horror score that counts as a hit (0.30–0.90)|
+
+Lower the slider to catch more frames, raise it to cut false positives. All three sliders live in the popup and take effect on the very next frame without a reload.
 
 ## Project layout
 

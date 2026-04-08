@@ -4,8 +4,8 @@ let requestInFlight = false;
 // positive frames before acting, so a single false positive can't yank
 // the player forward by 4 seconds.
 const positiveStreak = new Map();
-const DETECT_THRESHOLD = 0.5; // Same threshold for blur and skip — the streak does the debouncing.
-const SKIP_MIN_STREAK = 2;    // Two consecutive positive frames before we touch the player.
+const DEFAULT_THRESHOLD = 0.5; // Fallback if the user has never touched the sliders.
+const SKIP_MIN_STREAK = 2;     // Two consecutive positive frames before we touch the player.
 
 let creating = null;
 async function setupOffscreenDocument(path) {
@@ -33,10 +33,20 @@ async function analyzeImageLocally(base64, tabId) {
   try {
     await setupOffscreenDocument('src/offscreen.html');
 
-    const settings = await chrome.storage.local.get(["detectNsfw", "detectGore", "actionMode"]);
+    const settings = await chrome.storage.local.get([
+      "detectNsfw",
+      "detectGore",
+      "actionMode",
+      "thresholdNsfw",
+      "thresholdGore",
+      "thresholdHorror",
+    ]);
     const nsfwEnabled = settings.detectNsfw !== false;
     const goreEnabled = settings.detectGore !== false;
     const skipMode = settings.actionMode === "skip";
+    const nsfwThreshold = typeof settings.thresholdNsfw === "number" ? settings.thresholdNsfw : DEFAULT_THRESHOLD;
+    const goreThreshold = typeof settings.thresholdGore === "number" ? settings.thresholdGore : DEFAULT_THRESHOLD;
+    const horrorThreshold = typeof settings.thresholdHorror === "number" ? settings.thresholdHorror : DEFAULT_THRESHOLD;
 
     if (!nsfwEnabled && !goreEnabled) { requestInFlight = false; return; }
 
@@ -54,10 +64,10 @@ async function analyzeImageLocally(base64, tabId) {
       const horrorScore = result.horrorScore;
       const safeScore = result.safeScore;
 
-      const isNsfw = nsfwEnabled && nsfwScore > DETECT_THRESHOLD;
-      const isGore = goreEnabled && goreScore > DETECT_THRESHOLD;
+      const isNsfw = nsfwEnabled && nsfwScore > nsfwThreshold;
+      const isGore = goreEnabled && goreScore > goreThreshold;
       // Horror is grouped under the "Violence & Gore" toggle
-      const isHorror = goreEnabled && horrorScore > DETECT_THRESHOLD;
+      const isHorror = goreEnabled && horrorScore > horrorThreshold;
 
       let shouldBlur = isNsfw || isGore || isHorror;
 
@@ -73,7 +83,7 @@ async function analyzeImageLocally(base64, tabId) {
         positiveStreak.delete(tabId);
       }
 
-      console.log(`[SafeView Local] nsfw: ${nsfwScore.toFixed(3)} gore: ${goreScore.toFixed(3)} horror: ${horrorScore.toFixed(3)} safe: ${safeScore.toFixed(3)} mode: ${skipMode ? "skip" : "blur"} thr: ${DETECT_THRESHOLD} streak: ${positiveStreak.get(tabId) || 0} -> blur: ${shouldBlur}`);
+      console.log(`[SafeView Local] nsfw: ${nsfwScore.toFixed(3)}/${nsfwThreshold} gore: ${goreScore.toFixed(3)}/${goreThreshold} horror: ${horrorScore.toFixed(3)}/${horrorThreshold} safe: ${safeScore.toFixed(3)} mode: ${skipMode ? "skip" : "blur"} streak: ${positiveStreak.get(tabId) || 0} -> blur: ${shouldBlur}`);
 
       chrome.tabs.sendMessage(tabId, {
         type: "aiResult",
@@ -152,7 +162,14 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // Reset the streak when the user toggles modes — otherwise a stale
 // counter from blur mode could trigger an instant skip on first frame.
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.actionMode) positiveStreak.clear();
+  if (
+    changes.actionMode ||
+    changes.thresholdNsfw ||
+    changes.thresholdGore ||
+    changes.thresholdHorror
+  ) {
+    positiveStreak.clear();
+  }
 });
 
 // Setup offscreen early
