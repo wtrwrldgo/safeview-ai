@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeView</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-container">
+        <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="url(#paint0_linear)"
+            fill-opacity="0.1" />
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="url(#paint0_linear)"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M9 12L11 14L15 10" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="paint0_linear" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#818CF8" />
+              <stop offset="1" stop-color="#C084FC" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="title">SafeView</span>
+      </div>
+      <div class="status-badge" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">Loading...</span>
+      </div>
+    </div>
+
+    <div class="card main-toggle-card">
+      <div class="toggle-info">
+        <span class="toggle-title">AI Content Filter</span>
+        <span class="toggle-desc">Automatically blur & mute sensitive scenes</span>
+      </div>
+      <label class="premium-toggle">
+        <input type="checkbox" id="toggle" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="section-title">Detection Types</div>
+
+    <div class="card">
+      <div class="toggle-row">
+        <div class="toggle-info-small">
+          <span class="toggle-label">NSFW & Nudity</span>
+        </div>
+        <label class="premium-toggle small">
+          <input type="checkbox" id="detectNsfw" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="divider"></div>
+      <div class="toggle-row">
+        <div class="toggle-info-small">
+          <span class="toggle-label">Violence & Gore</span>
+        </div>
+        <label class="premium-toggle small">
+          <input type="checkbox" id="detectGore" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section-title">When detected</div>
+
+    <div class="card">
+      <div class="segmented" role="radiogroup" aria-label="Action when sensitive content is detected">
+        <button type="button" class="seg-btn" id="modeBlur" data-mode="blur" role="radio" aria-checked="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg>
+          Blur
+        </button>
+        <button type="button" class="seg-btn" id="modeSkip" data-mode="skip" role="radio" aria-checked="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          Skip
+        </button>
+      </div>
+      <p class="seg-hint" id="modeHint">Hides the scene with a soft blur overlay.</p>
+    </div>
+
+    <div class="footer">
+      <span class="filter-count" id="filterCount">0 timestamp filters</span>
+      <span class="version-text" id="versionText">v0.0.0</span>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+
+</html>

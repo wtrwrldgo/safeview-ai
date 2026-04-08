@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output (run `npm run build` to regenerate)
+dist/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+npm-debug.log*
+
+# Test artefacts
+*.webm
+final_neutral_ui.png
+
+# Model weights (327 MB — over GitHub's 100 MB limit)
+# Download from the GitHub Release and place at src/model/safeview_model.onnx
+src/model/*.onnx

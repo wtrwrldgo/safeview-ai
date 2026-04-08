@@ -1,0 +1,4 @@
+[
+  { "start": 10, "end": 15, "action": "blur", "label": "Gore" },
+  { "start": 45, "end": 55, "action": "skip", "label": "Adult Scene" }
+]

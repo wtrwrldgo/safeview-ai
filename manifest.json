@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "SafeView",
+  "version": "2.0.0",
+  "description": "AI-powered content filter for YouTube/Netflix. Detects and blurs NSFW, violence, and horror scenes.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "icons": {
+    "16": "src/icons/icon16.png",
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
+  "sandbox": {
+    "pages": [
+      "src/sandbox.html"
+    ]
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "src/icons/icon16.png",
+      "48": "src/icons/icon48.png"
+    },
+    "default_title": "SafeView"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.netflix.com/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/mock_database.json",
+        "model/*"
+      ],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.netflix.com/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; child-src 'self'"
+  }
+}
