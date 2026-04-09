@@ -147,3 +147,15 @@ siteYoutube.addEventListener("change", () => {
 siteNetflix.addEventListener("change", () => {
   updateSiteEnabled({ netflix: siteNetflix.checked });
 });
+
+// Open the options page when the user clicks "Manage URL filters".
+// Using chrome.runtime.openOptionsPage respects the manifest's
+// `options_ui.open_in_tab` flag and works whether the popup is pinned
+// to the toolbar or not.
+const openOptionsBtn = document.getElementById("openOptions");
+openOptionsBtn.addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+  // Popup auto-closes in most Chrome versions when a new tab opens, but
+  // force-close for consistency on the ones that do not.
+  window.close();
+});

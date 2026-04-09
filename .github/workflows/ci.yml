@@ -34,4 +34,6 @@ jobs:
           test -f dist/src/content.js
           test -f dist/src/popup.js
           test -f dist/src/popup.html
+          test -f dist/src/options.html
+          test -f dist/src/options.js
           echo "dist looks correct"

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeView — URL filters</title>
+  <link rel="stylesheet" href="options.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <main class="shell">
+    <header class="head">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" fill="url(#g)" fill-opacity="0.1" />
+          <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="url(#g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M9 12L11 14L15 10" stroke="url(#g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="g" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#818CF8" />
+              <stop offset="1" stop-color="#C084FC" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="brand-text">
+          <h1 class="brand-title">SafeView</h1>
+          <p class="brand-sub">URL filters</p>
+        </div>
+      </div>
+      <span class="status" id="savedStatus" aria-live="polite"></span>
+    </header>
+
+    <section class="card">
+      <h2 class="card-title">Blocklist</h2>
+      <p class="card-desc">
+        SafeView will never run detection on URLs that contain any of these patterns.
+        One pattern per line. Matching is a plain substring check against the full URL
+        (hostname, pathname, and query string).
+      </p>
+      <textarea id="blocklist" class="field" spellcheck="false" autocomplete="off"
+        placeholder="youtube.com/@MyTrustedChannel&#10;netflix.com/watch/12345&#10;youtube.com/watch?v=abc123"></textarea>
+      <p class="hint">Example: <code>youtube.com/@SomeChannel</code> disables SafeView on every video from that channel.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Allowlist</h2>
+      <p class="card-desc">
+        If this list is non-empty, SafeView will <em>only</em> run on URLs that match one of these
+        patterns. Leave it empty to allow every YouTube and Netflix URL by default.
+      </p>
+      <textarea id="allowlist" class="field" spellcheck="false" autocomplete="off"
+        placeholder="(empty — detect on all supported sites)"></textarea>
+      <p class="hint">Blocklist entries win over allowlist entries when both match the same URL.</p>
+    </section>
+
+    <footer class="foot">
+      <button type="button" id="save" class="btn btn-primary">Save</button>
+      <button type="button" id="reset" class="btn btn-ghost">Reset</button>
+    </footer>
+  </main>
+
+  <script type="module" src="options.js"></script>
+</body>
+
+</html>

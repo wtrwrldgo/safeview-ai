@@ -451,8 +451,46 @@ input:focus-visible+.toggle-slider {
   transform: translateY(0);
 }
 
+/* Options link row — sits between the last card and the version footer. */
+.options-link-row {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.options-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.options-link:hover {
+  color: #F8FAFC;
+  border-color: rgba(129, 140, 248, 0.35);
+  background: rgba(129, 140, 248, 0.08);
+}
+
+.options-link:active {
+  transform: scale(0.97);
+}
+
+.options-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.35);
+}
+
 .footer {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
