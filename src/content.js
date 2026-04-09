@@ -21,6 +21,28 @@
       ? 'netflix'
       : null
   let siteAllowed = true // Optimistic default — flipped once storage responds.
+
+  // URL-level allow/block lists. Plain substring match against location.href.
+  // Blocklist beats allowlist when both match, because the safer default when
+  // a user has said "never run here" is to honour that even if an allowlist
+  // entry also happens to match.
+  let blocklist = []
+  let allowlist = []
+  let urlAllowed = true
+
+  function evaluateUrlGate () {
+    const url = location.href
+    const blocked = blocklist.some((pat) => url.includes(pat))
+    if (blocked) {
+      urlAllowed = false
+      return
+    }
+    if (allowlist.length > 0) {
+      urlAllowed = allowlist.some((pat) => url.includes(pat))
+      return
+    }
+    urlAllowed = true
+  }
   let lastSkipAt = 0
   let rafId = null
   let activeVideo = null
@@ -46,17 +68,28 @@
         console.log('[SafeView] Loaded', filters.length, 'filters, enabled:', enabled)
       }
     })
-    chrome.storage.local.get(['actionMode', 'siteEnabled'], (data) => {
-      actionMode = data.actionMode === 'skip' ? 'skip' : 'blur'
-      const siteEnabled = data.siteEnabled || {}
-      siteAllowed = siteKey ? siteEnabled[siteKey] !== false : true
-      console.log('[SafeView] Action mode:', actionMode, 'site:', siteKey, 'allowed:', siteAllowed)
-      if (!siteAllowed) {
-        stopCapture()
-        hideOverlay()
-        lastState = null
+    chrome.storage.local.get(
+      ['actionMode', 'siteEnabled', 'blocklist', 'allowlist'],
+      (data) => {
+        actionMode = data.actionMode === 'skip' ? 'skip' : 'blur'
+        const siteEnabled = data.siteEnabled || {}
+        siteAllowed = siteKey ? siteEnabled[siteKey] !== false : true
+        blocklist = Array.isArray(data.blocklist) ? data.blocklist : []
+        allowlist = Array.isArray(data.allowlist) ? data.allowlist : []
+        evaluateUrlGate()
+        console.log(
+          '[SafeView] Action mode:', actionMode,
+          'site:', siteKey, 'siteAllowed:', siteAllowed,
+          'urlAllowed:', urlAllowed,
+          'block:', blocklist.length, 'allow:', allowlist.length,
+        )
+        if (!siteAllowed || !urlAllowed) {
+          stopCapture()
+          hideOverlay()
+          lastState = null
+        }
       }
-    })
+    )
   }
 
   function createOverlay () {
@@ -207,7 +240,7 @@
   // --- Canvas-based video frame capture ---
 
   function captureVideoFrame () {
-    if (!activeVideo || !enabled || !siteAllowed || activeVideo.paused) return
+    if (!activeVideo || !enabled || !siteAllowed || !urlAllowed || activeVideo.paused) return
     if (activeVideo.videoWidth === 0 || activeVideo.videoHeight === 0) return
     if (!chrome.runtime?.id) {
       stopCapture()
@@ -251,6 +284,10 @@
     stopCapture()
     if (!siteAllowed) {
       console.log('[SafeView] Site disabled (' + siteKey + '), not starting capture')
+      return
+    }
+    if (!urlAllowed) {
+      console.log('[SafeView] URL gated by allow/blocklist, not starting capture:', location.href)
       return
     }
     captureTimer = setInterval(captureVideoFrame, CAPTURE_INTERVAL)
@@ -331,6 +368,17 @@
   })
 
   function observerLoop () {
+    // Cheap per-frame sanity check: if the video element we are attached to
+    // has been detached from the DOM (Netflix loves to do this between
+    // episodes) clean it up and wait for the next MutationObserver hit.
+    // This is safer than relying on the videoRemovalObserver alone because
+    // Netflix sometimes removes the element without firing the mutation we
+    // are watching for.
+    if (activeVideo && !document.contains(activeVideo)) {
+      console.log('[SafeView] activeVideo no longer in DOM, cleaning up')
+      cleanupVideo()
+    }
+
     if (!activeVideo || !enabled) {
       hideOverlay()
       lastState = null
@@ -369,11 +417,20 @@
   function startMonitoring (video) {
     console.log('[SafeView] Starting monitoring for video:', video)
     if (activeVideo === video) return
+    // Netflix swaps the <video> element when the user moves between episodes.
+    // If we already had one attached, tear the old one down before latching
+    // on to the new one — otherwise the ResizeObserver, overlay and capture
+    // timer keep holding a reference to a detached element and leak every
+    // episode change.
+    if (activeVideo && activeVideo !== video) {
+      console.log('[SafeView] Active video swapped, cleaning up previous instance')
+      cleanupVideo()
+    }
     activeVideo = video
     console.log('[SafeView] Video detected')
     attachOverlay(video)
     if (!rafId) rafId = requestAnimationFrame(observerLoop)
-    if (enabled && siteAllowed) startCapture()
+    if (enabled && siteAllowed && urlAllowed) startCapture()
   }
 
   function setupVideoDetection () {
@@ -431,13 +488,67 @@
         stopCapture()
         hideOverlay()
         lastState = null
-      } else if (!wasAllowed && enabled && activeVideo) {
+      } else if (!wasAllowed && enabled && urlAllowed && activeVideo) {
         // Transition from off → on: resume capture immediately without
         // waiting for the next video detection pass.
         startCapture()
       }
     }
+    if (changes.blocklist || changes.allowlist) {
+      if (changes.blocklist) blocklist = changes.blocklist.newValue || []
+      if (changes.allowlist) allowlist = changes.allowlist.newValue || []
+      const wasAllowed = urlAllowed
+      evaluateUrlGate()
+      console.log('[SafeView] URL gate re-evaluated:', urlAllowed)
+      if (!urlAllowed) {
+        stopCapture()
+        hideOverlay()
+        lastState = null
+      } else if (!wasAllowed && enabled && siteAllowed && activeVideo) {
+        startCapture()
+      }
+    }
   })
+
+  // SPA navigation hook. YouTube and Netflix route between videos via
+  // history.pushState without reloading the page, which means our URL gate
+  // and the video element we are attached to can both silently go stale.
+  // We monkey-patch pushState and replaceState so we can re-evaluate the
+  // gate and re-scan for a fresh video element whenever the URL changes.
+  function handleUrlChange () {
+    const wasAllowed = urlAllowed
+    evaluateUrlGate()
+    if (urlAllowed !== wasAllowed) {
+      console.log('[SafeView] URL changed, gate is now', urlAllowed ? 'allow' : 'block')
+    }
+    if (!urlAllowed) {
+      stopCapture()
+      hideOverlay()
+      lastState = null
+      return
+    }
+    // Re-scan: the player may have been swapped between episodes.
+    const v = document.querySelector('video')
+    if (v && v !== activeVideo) {
+      startMonitoring(v)
+    } else if (v && enabled && siteAllowed && !captureTimer) {
+      startCapture()
+    }
+  }
+
+  const _pushState = history.pushState
+  history.pushState = function () {
+    const result = _pushState.apply(this, arguments)
+    setTimeout(handleUrlChange, 0)
+    return result
+  }
+  const _replaceState = history.replaceState
+  history.replaceState = function () {
+    const result = _replaceState.apply(this, arguments)
+    setTimeout(handleUrlChange, 0)
+    return result
+  }
+  window.addEventListener('popstate', () => setTimeout(handleUrlChange, 0))
 
   loadFilters()
   setupVideoDetection()
