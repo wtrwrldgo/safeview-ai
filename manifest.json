@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
   "name": "SafeView",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI-powered content filter for YouTube/Netflix. Detects and blurs NSFW, violence, and horror scenes.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "safeview@wtrwrldgo.github.io",
+      "strict_min_version": "115.0"
+    }
+  },
   "permissions": [
     "storage",
     "activeTab",
@@ -32,6 +38,10 @@
       "48": "src/icons/icon48.png"
     },
     "default_title": "SafeView"
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
   },
   "content_scripts": [
     {

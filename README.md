@@ -93,6 +93,15 @@ Everything is in the popup. There are no hidden flags.
 
 Lower the slider to catch more frames, raise it to cut false positives. All three sliders live in the popup and take effect on the very next frame without a reload. Per-site toggles stop capture entirely on disabled hosts, so there is zero model work and zero CPU cost on tabs you have opted out.
 
+### URL allowlist and blocklist
+
+For finer control than a whole-site toggle, open the options page from the popup (**Manage URL filters**) or from `chrome://extensions`. You get two text areas:
+
+- **Blocklist** — if the current tab URL contains any of these substrings, SafeView stops running on that tab. Useful for channels or playlists you trust.
+- **Allowlist** — if non-empty, SafeView only runs on tabs whose URL contains one of the listed substrings. Blocklist wins over allowlist.
+
+One substring per line. Matching is plain `String.includes`, so `youtube.com/@mychannel` is enough to cover every video on a channel. Edits take effect live on open tabs, no reload required.
+
 ## Project layout
 
 ```
@@ -104,6 +113,9 @@ src/
   popup.html       settings UI
   popup.js         persists settings to chrome.storage.local
   popup.css        styling
+  options.html     full options page for URL allowlist and blocklist
+  options.js       loads, normalizes, and saves the lists
+  options.css      styling for the options page
   sandbox.html     sandboxed page for CSP restricted model loading
   model/           ONNX weights (not in git, download from release)
   icons/           16, 48, 128 px toolbar icons
@@ -112,19 +124,17 @@ src/
 
 ## Roadmap
 
-- Firefox MV3 port
-- Distilled model under 50 MB
-- Per category score thresholds exposed in the popup
+- Firefox MV3 port (manifest stub landed in v0.4.0, see [docs/FIREFOX.md](docs/FIREFOX.md))
+- Distilled model under 50 MB (plan in [training/DISTILLATION.md](training/DISTILLATION.md))
 - Fixture based test suite for edge cases like low light and animation
-- Netflix specific content script that respects their player lifecycle
-- Per site enable and disable toggles
-- Whitelist and blacklist support for known safe channels
+- Audio track awareness for scenes where the video is safe but the audio is not
+- Import and export of URL filter lists
 
 ## Contributing
 
-The project is at v0.1.0 and bugs are expected. If you find a scene that SafeView should catch but doesn't, or a scene it catches by mistake, the most useful thing you can do is open an issue with the video URL and timestamp. That gives me the fixture to reproduce against.
+The project is young and bugs are expected. If you find a scene that SafeView should catch but doesn't, or a scene it catches by mistake, the most useful thing you can do is open an issue with the video URL and timestamp. That gives me the fixture to reproduce against.
 
-For code contributions, standard fork and pull request flow. Keep changes small and focused. The three files that matter most are `src/background.js`, `src/content.js`, and `src/offscreen.js`.
+Full contributor guide, local setup steps, and the commit conventions live in [CONTRIBUTING.md](CONTRIBUTING.md). The three files that matter most are `src/background.js`, `src/content.js`, and `src/offscreen.js`.
 
 ## Privacy
 
