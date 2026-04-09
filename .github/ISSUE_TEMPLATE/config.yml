@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question about installation
+    url: https://github.com/wtrwrldgo/safeview-ai#install
+    about: The README has the full install and sideload steps.
+  - name: Security disclosure
+    url: https://github.com/wtrwrldgo/safeview-ai/security/advisories/new
+    about: For anything sensitive, please use GitHub private security advisories instead of opening a public issue.
