@@ -13,8 +13,11 @@ const thrHorror = document.getElementById("thrHorror");
 const thrNsfwValue = document.getElementById("thrNsfwValue");
 const thrGoreValue = document.getElementById("thrGoreValue");
 const thrHorrorValue = document.getElementById("thrHorrorValue");
+const siteYoutube = document.getElementById("siteYoutube");
+const siteNetflix = document.getElementById("siteNetflix");
 
 const DEFAULT_THRESHOLD = 0.5;
+const DEFAULT_SITE_ENABLED = { youtube: true, netflix: true };
 
 function formatThreshold(v) {
   return Number(v).toFixed(2);
@@ -53,6 +56,7 @@ chrome.storage.local.get(
     "thresholdNsfw",
     "thresholdGore",
     "thresholdHorror",
+    "siteEnabled",
   ],
   (data) => {
     const isEnabled = data.enabled !== false;
@@ -72,6 +76,10 @@ chrome.storage.local.get(
     thrNsfwValue.textContent = formatThreshold(nsfwT);
     thrGoreValue.textContent = formatThreshold(goreT);
     thrHorrorValue.textContent = formatThreshold(horrorT);
+
+    const siteEnabled = { ...DEFAULT_SITE_ENABLED, ...(data.siteEnabled || {}) };
+    siteYoutube.checked = siteEnabled.youtube !== false;
+    siteNetflix.checked = siteEnabled.netflix !== false;
 
     const count = (data.filters || []).length;
     filterCount.textContent = count + " timestamp filter" + (count !== 1 ? "s" : "");
@@ -120,4 +128,22 @@ sliderToStorage.forEach(({ el, label, key }) => {
     label.textContent = formatThreshold(value);
     chrome.storage.local.set({ [key]: value });
   });
+});
+
+// Per-site enable/disable. We always write the full object back so the storage
+// shape stays consistent and downstream readers never see a partial update.
+function updateSiteEnabled(patch) {
+  chrome.storage.local.get(["siteEnabled"], (data) => {
+    const current = { ...DEFAULT_SITE_ENABLED, ...(data.siteEnabled || {}) };
+    const next = { ...current, ...patch };
+    chrome.storage.local.set({ siteEnabled: next });
+  });
+}
+
+siteYoutube.addEventListener("change", () => {
+  updateSiteEnabled({ youtube: siteYoutube.checked });
+});
+
+siteNetflix.addEventListener("change", () => {
+  updateSiteEnabled({ netflix: siteNetflix.checked });
 });

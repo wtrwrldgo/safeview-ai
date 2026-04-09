@@ -1,5 +1,9 @@
 # SafeView AI
 
+[![CI](https://github.com/wtrwrldgo/safeview-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/wtrwrldgo/safeview-ai/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/wtrwrldgo/safeview-ai)](https://github.com/wtrwrldgo/safeview-ai/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A Chrome extension that runs a local vision model on every frame of the video you are watching, and either blurs or skips scenes flagged as NSFW, violence, or horror. Everything runs on your machine. No frames ever leave the browser.
 
 Works on YouTube and Netflix. Built on ONNX Runtime Web.
@@ -84,8 +88,10 @@ Everything is in the popup. There are no hidden flags.
 | NSFW threshold     | 0.50    | Minimum NSFW score that counts as a hit (0.30–0.90)  |
 | Gore threshold     | 0.50    | Minimum gore score that counts as a hit (0.30–0.90)  |
 | Horror threshold   | 0.50    | Minimum horror score that counts as a hit (0.30–0.90)|
+| YouTube            | On      | Run detection on YouTube tabs                        |
+| Netflix            | On      | Run detection on Netflix tabs                        |
 
-Lower the slider to catch more frames, raise it to cut false positives. All three sliders live in the popup and take effect on the very next frame without a reload.
+Lower the slider to catch more frames, raise it to cut false positives. All three sliders live in the popup and take effect on the very next frame without a reload. Per-site toggles stop capture entirely on disabled hosts, so there is zero model work and zero CPU cost on tabs you have opted out.
 
 ## Project layout
 

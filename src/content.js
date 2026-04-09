@@ -10,6 +10,17 @@
   let filters = []
   let enabled = true
   let actionMode = 'blur' // 'blur' | 'skip' — chosen by the user in the popup
+
+  // Per-site gate. The content script only runs on hosts listed in manifest.json
+  // (youtube.com / netflix.com), so we map the current hostname to a storage key
+  // and refuse to start capture when that key is false.
+  const host = location.hostname
+  const siteKey = host.includes('youtube.com')
+    ? 'youtube'
+    : host.includes('netflix.com')
+      ? 'netflix'
+      : null
+  let siteAllowed = true // Optimistic default — flipped once storage responds.
   let lastSkipAt = 0
   let rafId = null
   let activeVideo = null
@@ -35,9 +46,16 @@
         console.log('[SafeView] Loaded', filters.length, 'filters, enabled:', enabled)
       }
     })
-    chrome.storage.local.get(['actionMode'], (data) => {
+    chrome.storage.local.get(['actionMode', 'siteEnabled'], (data) => {
       actionMode = data.actionMode === 'skip' ? 'skip' : 'blur'
-      console.log('[SafeView] Action mode:', actionMode)
+      const siteEnabled = data.siteEnabled || {}
+      siteAllowed = siteKey ? siteEnabled[siteKey] !== false : true
+      console.log('[SafeView] Action mode:', actionMode, 'site:', siteKey, 'allowed:', siteAllowed)
+      if (!siteAllowed) {
+        stopCapture()
+        hideOverlay()
+        lastState = null
+      }
     })
   }
 
@@ -189,7 +207,7 @@
   // --- Canvas-based video frame capture ---
 
   function captureVideoFrame () {
-    if (!activeVideo || !enabled || activeVideo.paused) return
+    if (!activeVideo || !enabled || !siteAllowed || activeVideo.paused) return
     if (activeVideo.videoWidth === 0 || activeVideo.videoHeight === 0) return
     if (!chrome.runtime?.id) {
       stopCapture()
@@ -231,6 +249,10 @@
 
   function startCapture () {
     stopCapture()
+    if (!siteAllowed) {
+      console.log('[SafeView] Site disabled (' + siteKey + '), not starting capture')
+      return
+    }
     captureTimer = setInterval(captureVideoFrame, CAPTURE_INTERVAL)
     console.log('[SafeView] AI capture started (video-only, every ' + CAPTURE_INTERVAL + 'ms)')
   }
@@ -351,7 +373,7 @@
     console.log('[SafeView] Video detected')
     attachOverlay(video)
     if (!rafId) rafId = requestAnimationFrame(observerLoop)
-    if (enabled) startCapture()
+    if (enabled && siteAllowed) startCapture()
   }
 
   function setupVideoDetection () {
@@ -383,7 +405,7 @@
   chrome.storage.onChanged.addListener((changes) => {
     if (changes.enabled) {
       enabled = changes.enabled.newValue
-      if (enabled && activeVideo) startCapture()
+      if (enabled && siteAllowed && activeVideo) startCapture()
       else {
         stopCapture()
         hideOverlay()
@@ -398,6 +420,21 @@
       if (actionMode === 'skip') {
         hideOverlay()
         lastState = null
+      }
+    }
+    if (changes.siteEnabled && siteKey) {
+      const next = changes.siteEnabled.newValue || {}
+      const wasAllowed = siteAllowed
+      siteAllowed = next[siteKey] !== false
+      console.log('[SafeView] Site toggle changed:', siteKey, '->', siteAllowed)
+      if (!siteAllowed) {
+        stopCapture()
+        hideOverlay()
+        lastState = null
+      } else if (!wasAllowed && enabled && activeVideo) {
+        // Transition from off → on: resume capture immediately without
+        // waiting for the next video detection pass.
+        startCapture()
       }
     }
   })
